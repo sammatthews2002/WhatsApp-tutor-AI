@@ -14,26 +14,29 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
 def generate_ai_response(user_message):
-    """Sends a request to OpenRouter API and returns the AI-generated response."""
+    
     url = "https://openrouter.ai/api/v1/chat/completions"
+    api_key = os.getenv("OPENROUTER_API_KEY")  # Load API key
+    
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
+    
+    print("🔍 OpenRouter Headers:", headers)  # Debugging Line
+    
     payload = {
-        "model": "mistralai/mistral-7b-instruct:free",  # Change model if needed
-        "messages": [
-            {"role": "system", "content": "You are an AI tutor helping students with educational topics."},
-            {"role": "user", "content": user_message}
-        ]
+        "model": "mistralai/mistral-7b-instruct:free",
+        "messages": [{"role": "user", "content": user_message}]
     }
-
+    
     response = requests.post(url, json=payload, headers=headers)
     
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
-    else:
-        return f"Error: {response.json()}"
+    if response.status_code == 401:
+        return "❌ Authentication Error: Check your OpenRouter API Key."
+    
+    return response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
+
 
 def send_whatsapp_message(recipient, message):
     """Sends AI response back to the user via WhatsApp."""
